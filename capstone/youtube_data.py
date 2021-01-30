@@ -25,15 +25,15 @@ import os
 
 class TrainTable(tables.IsDescription):
     """Table in hdf5 file for storing color image array."""
-    R = tables.UInt8Col(pos=0)
-    G = tables.UInt8Col(pos=1)
+    L = tables.UInt8Col(pos=0)
+    A = tables.UInt8Col(pos=1)
     B = tables.UInt8Col(pos=2)
     
 class TestTable(tables.IsDescription):
     """Table in hdf5 file for storing grayscale image array."""
     L = tables.UInt8Col(pos=0)
 
-def capture_youtube(url, filename, skip_open=0, skip_end=0, mode='RGB'):
+def capture_youtube(url, filename, skip_open=0, skip_end=0, mode='LAB'):
     """
     Download a YouTube video, take screenshots, and return them as array.
 
@@ -48,14 +48,14 @@ def capture_youtube(url, filename, skip_open=0, skip_end=0, mode='RGB'):
     skip_end : int, optional
         Number of seconds to skip at the end of video. The default is 0.
     mode: str, optional
-        `RGB` (color) or `L` (grayscale). The default is `RGB`. 
+        `RGB`, `LAB` (color) or `L` (grayscale). The default is `LAB`. 
 
     Returns
     -------
     None.
 
     """
-    assert mode in ('RGB', 'L')
+    assert mode in ('RGB', 'L', 'LAB')
     
     # Download video from YouTube
     video = YouTube(url)
@@ -74,7 +74,7 @@ def capture_youtube(url, filename, skip_open=0, skip_end=0, mode='RGB'):
     total_frames = vid_cap.get(cv2.CAP_PROP_FRAME_COUNT)
     
     frame_count = 0
-    if mode == 'RGB':
+    if mode in ('RGB', 'LAB'):
         data = np.empty((0, 360, 480, 3)).astype('uint8')
     else:
         data = np.empty((0, 360, 480, 1)).astype('uint8')
@@ -97,6 +97,8 @@ def capture_youtube(url, filename, skip_open=0, skip_end=0, mode='RGB'):
                 # Default color scheme in openCV is BGR, covert to RGB
                 if mode == 'RGB':
                     image = image[:,:,::-1]
+                elif mode == 'LAB':
+                    image = cv2.cvtColor(image, cv2.COLOR_BGR2Lab)
                 else: 
                     image = image[:,:,:1]
                 data = np.concatenate((data, np.expand_dims(image, axis=0)))
@@ -137,13 +139,13 @@ video_urls = [
 for i in range(len(video_urls)):
     filename = 'video_%s'%i
     data = capture_youtube(video_urls[i], filename, 75, 60)
-    R = data[:,:,:,0].flatten()
-    G = data[:,:,:,1].flatten()
+    L = data[:,:,:,0].flatten()
+    A = data[:,:,:,1].flatten()
     B = data[:,:,:,2].flatten()
     
     mdb = tables.open_file('youtube_data.h5', mode="r+")
     data_table = mdb.root.Train
-    data_table.append(np.stack((R,G,B), axis=1))
+    data_table.append(np.stack((L,A,B), axis=1))
     data_table.flush()
     mdb.close()
     
