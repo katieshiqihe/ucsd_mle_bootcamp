@@ -1,0 +1,12 @@
+# Existing Work
+There many different models for image colorization, most leverages convolutional layers for color predictions. Below I will discuss two models: the first uses conditional GAN architecture to model color distribution while the second uses deep neural net that exploits semantic information and feature extraction. 
+
+## [Unsupervised Diverse Colorization via Generative Adversarial Networks](https://arxiv.org/pdf/1702.06674.pdf)
+The authors employ a conditional GAN with a fully convolutional generator for image colorization. Unlike many other works, they avoid down-sampling of the images by setting the convolution stride to $1$ to retain all spatial information and to allow continuous concatenation of the grayscale image and noise vector at each layer for maximum color variation. 
+
+A few configurations are discussed in the paper which include using single and multi-layer noise in the generator, Wasserstein distance in the loss function, etc. I implemented a version with single layer noise vector and Wasserstein loss training on a small set (300 images) of data. Since the dataset is so small and the Wasserstein GAN takes longer to converge, the colorization results are not optimal. However, the model recognizes boundaries in the images and attempted to color the appropriate area. The performance could be improved by using more data and training time, multi-layer noise, and potentially cross entropy loss instead of Wasserstein if the dataset is large enough. 
+
+## [Learning Representations for Automatic Colorization](https://arxiv.org/pdf/1603.06668.pdf)
+This model leverages the pre-trained VGG to extract semantic information and predict color distribution in order to produce realistic representation. The convolutional layers in VGG helps to detect different objects and boundaries within an image while the hypercolumns (fully-connected layers) approximates the chroma, hue, and lightness distribution. The actual training is done in [caffe](https://caffe.berkeleyvision.org/) with custom layer to extract hypercolumn for speed and memory efficiency. 
+
+An API is provided in the Python package and the colorization results are quite impressive. As discussed in the paper, there are common objects (clothing, cars, etc.) that can take on a wide range of colors and the model does very good job depicting realistic colors for such objects. Chromatic fading is also used to smooth color transition and minimize artifacts. 
